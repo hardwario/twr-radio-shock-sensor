@@ -2,6 +2,9 @@
 
 #define RADIO_DELAY 3000
 
+#define BATTERY_UPDATE_INTERVAL (60 * 60 * 1000)
+
+
 // LED instance
 bc_led_t led;
 
@@ -11,6 +14,8 @@ bc_button_t button;
 // Accelerometer
 bc_lis2dh12_t acc;
 bc_lis2dh12_result_g_t a_result;
+
+bc_lis2dh12_alarm_t alarm;
 
 void button_event_handler(bc_button_t *self, bc_button_event_t event, void *event_param)
 {
@@ -60,8 +65,24 @@ void lis2_event_handler(bc_lis2dh12_t *self, bc_lis2dh12_event_t event, void *ev
     }
 }
 
+// This function dispatches battery events
+void battery_event_handler(bc_module_battery_event_t event, void *event_param)
+{
+    // Update event?
+    if (event == BC_MODULE_BATTERY_EVENT_UPDATE)
+    {
+        float voltage;
 
-bc_lis2dh12_alarm_t alarm;
+        // Read battery voltage
+        if (bc_module_battery_get_voltage(&voltage))
+        {
+            bc_log_info("APP: Battery voltage = %.2f", voltage);
+
+            // Publish battery voltage
+            bc_radio_pub_battery(&voltage);
+        }
+    }
+}
 
 void application_init(void)
 {
@@ -75,6 +96,11 @@ void application_init(void)
     // Initialize button
     bc_button_init(&button, BC_GPIO_BUTTON, BC_GPIO_PULL_DOWN, false);
     bc_button_set_event_handler(&button, button_event_handler, NULL);
+
+    // Initialize battery
+    bc_module_battery_init();
+    bc_module_battery_set_event_handler(battery_event_handler, NULL);
+    bc_module_battery_set_update_interval(BATTERY_UPDATE_INTERVAL);
 
     // Initialize radio
     bc_radio_init(BC_RADIO_MODE_NODE_SLEEPING);
