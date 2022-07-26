@@ -1,4 +1,4 @@
-#include <application.h>
+#include <twr.h>
 
 #define RADIO_DELAY 10000
 
@@ -106,7 +106,7 @@ void application_init(void)
     twr_radio_init(TWR_RADIO_MODE_NODE_SLEEPING);
 
     // Send radio pairing request
-    twr_radio_pairing_request("shock-sensor", VERSION);
+    twr_radio_pairing_request("shock-sensor", FW_VERSION);
 
     twr_lis2dh12_init(&acc, TWR_I2C_I2C0, 0x19);
     twr_lis2dh12_set_event_handler(&acc, lis2_event_handler, NULL);
