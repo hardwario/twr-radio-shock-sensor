@@ -17,6 +17,8 @@ twr_lis2dh12_result_g_t a_result;
 
 twr_lis2dh12_alarm_t alarm;
 
+bool reset_flag = false;
+
 void button_event_handler(twr_button_t *self, twr_button_event_t event, void *event_param)
 {
     if (event == TWR_BUTTON_EVENT_PRESS)
@@ -27,6 +29,25 @@ void button_event_handler(twr_button_t *self, twr_button_event_t event, void *ev
         button_press_count++;
 
         twr_radio_pub_push_button(&button_press_count);
+        twr_log_debug("Button press: %d", button_press_count);
+
+    }
+
+    if(event == TWR_BUTTON_EVENT_HOLD)
+    {
+        reset_flag = true;
+        twr_led_pulse(&led, 5000);
+    }
+
+    if(event == TWR_BUTTON_EVENT_RELEASE)
+    {
+        if(reset_flag)
+        {
+            // Reset must be handled later when the button is released, because after reboot when any button is pressed
+            // the BOOT pin is also HIGH, which causes start of bootloader instead of the application
+            twr_log_debug("System reset");
+            twr_system_reset();
+        }
     }
 }
 
